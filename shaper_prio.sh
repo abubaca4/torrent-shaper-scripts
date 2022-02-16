@@ -13,7 +13,7 @@ WAN_INTF=eth2.2
 LAN_INTF=br0
 
 # is torrent filtering by mac and port enabled(true)
-enable_mac_filter=false
+enable_mac_filter=true
 
 # mac(without :) and port for filter torrents
 mac_port_list="629899F3B532|51413 00D86139729B|20000 00241D833036|30000"
@@ -22,7 +22,7 @@ mac_port_list="629899F3B532|51413 00D86139729B|20000 00241D833036|30000"
 enable_ipv6_torrent=false
 
 # is torrent filtering by ip and port enabled(true)
-enable_ip_filter=true
+enable_ip_filter=false
 
 # ip and port for filter torrents
 ip_port_list="192.168.8.39|51413 192.168.8.61|20000 192.168.8.44|30000"
@@ -119,6 +119,7 @@ if [ "$enable_mac_filter" = true ] ; then
     done
 fi
 
+# filter by ip and port for torrents
 if [ "$enable_ip_filter" = true ] ; then
     for e in $ip_port_list
     do
