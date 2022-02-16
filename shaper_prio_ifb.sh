@@ -60,14 +60,14 @@ tc filter add dev $WAN_INTF parent 1: protocol ip prio 1 u32 match ip protocol 1
 #ACK
 tc filter add dev $WAN_INTF parent 1: protocol ip prio 1 u32 match ip protocol 6 0xff match u8 0x05 0x0f at 0 match u16 0x0000 0xffc0 at 2 match u8 0x10 0xff at 33 flowid 1:1
 #DNS
-tc filter add dev $WAN_INTF parent 1: protocol ip prio 1 u32 match ip protocol 17 0xff match ip sport 53 0xffff flowid 1:1
+tc filter add dev $WAN_INTF parent 1: protocol ip prio 1 u32 match ip protocol 17 0xff match ip dport 53 0xffff flowid 1:1
 #VOIP
 tc filter add dev $WAN_INTF parent 1: protocol ip prio 2 u32 match ip tos 0x68 0xff match ip protocol 11 0xff flowid 1:1
 tc filter add dev $WAN_INTF parent 1: protocol ip prio 2 u32 match ip tos 0xb8 0xff match ip protocol 11 0xff flowid 1:1
 #TOS
 tc filter add dev $WAN_INTF parent 1: protocol ip prio 2 u32 match ip tos 0x10 0xff flowid 1:1
 #NTP
-tc filter add dev $WAN_INTF parent 1: protocol ip prio 2 u32 match ip protocol 17 0xff match ip sport 123 0xffff flowid 1:1
+tc filter add dev $WAN_INTF parent 1: protocol ip prio 2 u32 match ip protocol 17 0xff match ip dport 123 0xffff flowid 1:1
 ## incoming
 #ICMP
 tc filter add dev $WAN_IFB parent 1: protocol ip prio 1 u32 match ip protocol 1 0xff flowid 1:1
