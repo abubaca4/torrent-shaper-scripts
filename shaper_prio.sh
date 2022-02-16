@@ -13,13 +13,19 @@ WAN_INTF=eth2.2
 LAN_INTF=br0
 
 # is torrent filtering by mac and port enabled(true)
-enable_mac_filter=true
+enable_mac_filter=false
 
 # mac(without :) and port for filter torrents
 mac_port_list="629899F3B532|51413 00D86139729B|20000 00241D833036|30000"
 
 # protocol ipv6 filter not work in PADAVAN with kernel 3.4.113 so it option to diasble ipv6 filter(true for enable)
 enable_ipv6_torrent=false
+
+# is torrent filtering by ip and port enabled(true)
+enable_ip_filter=true
+
+# ip and port for filter torrents
+ip_port_list="192.168.8.39|51413 192.168.8.61|20000 192.168.8.44|30000"
 
 ## end settings
 
@@ -113,3 +119,24 @@ if [ "$enable_mac_filter" = true ] ; then
     done
 fi
 
+if [ "$enable_ip_filter" = true ] ; then
+    for e in $ip_port_list
+    do
+        temp_ip="${e%%|*}"
+        temp_port="${e##*|}"
+
+        ## outcoming
+        tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 \
+        match ip sport $temp_port 0xffff \
+        flowid 1:3
+        #match ip src $temp_ip \
+        ## end outcoming
+
+        ## incoming
+        tc filter add dev $LAN_INTF parent 1: protocol ip prio 8 u32 \
+        match ip dst $temp_ip \
+        match ip dport $temp_port 0xffff \
+        flowid 1:3
+        ## end incoming
+    done
+fi
