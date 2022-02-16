@@ -4,11 +4,24 @@
 modprobe sch_fq_codel
 modprobe cls_u32
 
+## settings
+
 # should be with your external ip check it by ifconfig or ip a show
 WAN_INTF=eth2.2
 
 # should be local bridge with your switch ports and wifi
 LAN_INTF=br0
+
+# is torrent filtering by mac and port enabled(true)
+enable_mac_filter=true
+
+# mac(without :) and port for filter torrents
+mac_port_list="629899F3B532|51413 00D86139729B|20000 00241D833036|30000"
+
+# protocol ipv6 filter not work in PADAVAN with kernel 3.4.113 so it option to diasble ipv6 filter(true for enable)
+enable_ipv6_torrent=false
+
+## end settings
 
 # remove default
 tc qdisc del dev $WAN_INTF root > /dev/null 2>&1
@@ -63,43 +76,40 @@ tc filter add dev $LAN_INTF parent 1: protocol ip prio 2 u32 match ip protocol 1
 # all other traffic
 
 ###LOW PRIO
-# for torrents
-mac_port_list="629899F3B532|51413 00D86139729B|20000 00241D833036|30000"
-enable_ipv6_torrent=false
-for e in $mac_port_list
-do
-    temp_mac="${e%%|*}"
-    temp_port="${e##*|}"
+# filter by mac and port for torrents
+if [ "$enable_mac_filter" = true ] ; then
+    for e in $mac_port_list
+    do
+        temp_mac="${e%%|*}"
+        temp_port="${e##*|}"
 
-    last_4_mac=$(echo "$temp_mac" | cut -c9-12)
-    first_8_mac=$(echo "$temp_mac" | cut -c1-8)
-    ## outcoming
-    tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 \
-    match ip sport $temp_port 0xffff \
-    flowid 1:3
-    #match u16 0x$last_4_mac 0xFFFF at -4 \
-    #match u32 0x$first_8_mac 0xFFFFFFFF at -8 \   
-    if [ "$enable_ipv6_torrent" = true ] ; then
-        tc filter add dev $WAN_INTF parent 1: protocol ipv6 prio 8 u32 \
-        match u16 0x$last_4_mac 0xFFFF at -4 \
-        match u32 0x$first_8_mac 0xFFFFFFFF at -8 \
+        ## outcoming
+        last_4_mac=$(echo "$temp_mac" | cut -c9-12)
+        first_8_mac=$(echo "$temp_mac" | cut -c1-8)
+        #outcoming_mac_filter="match u16 0x$last_4_mac 0xFFFF at -4 match u32 0x$first_8_mac 0xFFFFFFFF at -8 "
+        tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 $outcoming_mac_filter\
         match ip sport $temp_port 0xffff \
-        flowid 1:3
-    fi
+        flowid 1:3  
+        if [ "$enable_ipv6_torrent" = true ] ; then
+            tc filter add dev $WAN_INTF parent 1: protocol ipv6 prio 8 u32 $outcoming_mac_filter\
+            match ip sport $temp_port 0xffff \
+            flowid 1:3
+        fi
+        ## end outcoming
 
-    first_4_mac=$(echo "$temp_mac" | cut -c1-4)
-    last_8_mac=$(echo "$temp_mac" | cut -c5-12)
-    ## incoming
-    tc filter add dev $LAN_INTF parent 1: protocol ip prio 8 u32 \
-    match u32 0x$last_8_mac 0xFFFFFFFF at -12 \
-    match u16 0x$first_4_mac 0xFFFF at -14 \
-    match ip dport $temp_port 0xffff \
-    flowid 1:3
-    if [ "$enable_ipv6_torrent" = true ] ; then
-        tc filter add dev $LAN_INTF parent 1: protocol ipv6 prio 8 u32 \
-        match u32 0x$last_8_mac 0xFFFFFFFF at -12 \
-        match u16 0x$first_4_mac 0xFFFF at -14 \
+        ## incoming
+        first_4_mac=$(echo "$temp_mac" | cut -c1-4)
+        last_8_mac=$(echo "$temp_mac" | cut -c5-12)
+        incoming_mac_filter="match u32 0x$last_8_mac 0xFFFFFFFF at -12 match u16 0x$first_4_mac 0xFFFF at -14 "
+        tc filter add dev $LAN_INTF parent 1: protocol ip prio 8 u32 $incoming_mac_filter\
         match ip dport $temp_port 0xffff \
         flowid 1:3
-    fi
-done
+        if [ "$enable_ipv6_torrent" = true ] ; then
+            tc filter add dev $LAN_INTF parent 1: protocol ipv6 prio 8 u32 $incoming_mac_filter\
+            match ip dport $temp_port 0xffff \
+            flowid 1:3
+        fi
+        ## end incoming
+    done
+fi
+
