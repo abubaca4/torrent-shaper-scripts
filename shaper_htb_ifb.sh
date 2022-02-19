@@ -148,14 +148,16 @@ if [ "$enable_ip_filter" = true ] ; then
         temp_port="${e##*|}"
 
         ## outcoming
-        tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 \
-        match ip sport $temp_port 0xffff \ #match ip src $temp_ip \
+        #outcoming_ip_filter="match ip src $temp_ip "
+        tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 $outcoming_ip_filter\
+        match ip sport $temp_port 0xffff \
         flowid 1:30
         ## end outcoming
 
         ## incoming
-        tc filter add dev $WAN_IFB parent 1: protocol ip prio 8 u32 \
-        match ip dport $temp_port 0xffff \ #match ip dst $temp_ip \
+        #incoming_ip_filter="match ip dst $temp_ip "
+        tc filter add dev $WAN_IFB parent 1: protocol ip prio 8 u32 $incoming_ip_filter\
+        match ip dport $temp_port 0xffff \
         flowid 1:30
         ## end incoming
     done
