@@ -3,6 +3,7 @@
 # kernel modules load
 modprobe sch_fq_codel
 modprobe cls_u32
+modprobe act_mirred
 modprobe ifb numifbs=1
 
 ## settings
@@ -114,7 +115,7 @@ if [ "$enable_mac_filter" = true ] ; then
         ## incoming
         first_4_mac=$(echo "$temp_mac" | cut -c1-4)
         last_8_mac=$(echo "$temp_mac" | cut -c5-12)
-        incoming_mac_filter="match u32 0x$last_8_mac 0xFFFFFFFF at -12 match u16 0x$first_4_mac 0xFFFF at -14 "
+        #incoming_mac_filter="match u32 0x$last_8_mac 0xFFFFFFFF at -12 match u16 0x$first_4_mac 0xFFFF at -14 "
         tc filter add dev $WAN_IFB parent 1: protocol ip prio 8 u32 $incoming_mac_filter\
         match ip dport $temp_port 0xffff \
         flowid 1:3
@@ -136,15 +137,13 @@ if [ "$enable_ip_filter" = true ] ; then
 
         ## outcoming
         tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 \
-        match ip sport $temp_port 0xffff \
+        match ip sport $temp_port 0xffff \ #match ip src $temp_ip \
         flowid 1:3
-        #match ip src $temp_ip \
         ## end outcoming
 
         ## incoming
         tc filter add dev $WAN_IFB parent 1: protocol ip prio 8 u32 \
-        match ip dst $temp_ip \
-        match ip dport $temp_port 0xffff \
+        match ip dport $temp_port 0xffff \ #match ip dst $temp_ip \
         flowid 1:3
         ## end incoming
     done
