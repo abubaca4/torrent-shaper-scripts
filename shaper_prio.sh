@@ -128,9 +128,8 @@ if [ "$enable_ip_filter" = true ] ; then
 
         ## outcoming
         tc filter add dev $WAN_INTF parent 1: protocol ip prio 8 u32 \
-        match ip sport $temp_port 0xffff \
+        match ip sport $temp_port 0xffff \ #match ip src $temp_ip \
         flowid 1:3
-        #match ip src $temp_ip \
         ## end outcoming
 
         ## incoming
